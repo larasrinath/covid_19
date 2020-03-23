@@ -5,7 +5,6 @@ output:
     orientation: rows
     vertical_layout: fill
     social: [ "twitter", "facebook", "menu"]
-    source_code: embed
 ---
 
 ```{r setup, include=FALSE}
@@ -23,19 +22,14 @@ library(RCurl)
 library(tidyverse)
 library(rvest)
 library(lubridate)
-library(ggplot2)
 library(gridExtra)
 library(ggthemes)
 library(scales)
 library(hrbrthemes)
-library(plotly)
 library(gganimate)
 library(treemap)
 library(crosstalk)
-library(openintro)
-library(highcharter)
 library(countrycode)
-
 
 ```
 
@@ -125,8 +119,9 @@ Timeline <- ggplot(Timelinechart, aes(x=Date, y=Affected)) +
                 labels=date_format("%b %d")))+
   geom_point(aes(color = Status),na.rm = T) +
   theme_gray()+
-  scale_color_manual(values=c("yellow", "red", "green"))+
+  scale_color_manual(values=c("#F4D03F", "#58D68D", "#EC7063"))+
   xlab("Timeline")
+
 
 
 p <- ggplotly(Timeline) %>% layout(legend = list(orientation = 'h')) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
@@ -146,7 +141,6 @@ affected_countries <- full_table %>%
   ungroup() %>%
   summarise(total = sum(n))
 
-#############
 ```
 
 ```{r}
@@ -200,6 +194,8 @@ valueBox(fatality,
 
 
 
+
+
 Row  {data-width=2000}
 -------------------------------------
 
@@ -208,13 +204,13 @@ Row  {data-width=2000}
 p
 ```
 
-
 Map
 =====================================
 
 ### MAPS
 
 ```{r}
+
 new_data_country <- full_table %>% filter(Date == latest_date)%>% group_by(Country) %>%
   summarise(confirmed = sum(confirmed),
             death = sum(death),
@@ -229,3 +225,19 @@ highchart() %>%
    hc_colorAxis(stops = color_stops(n=5,colors = c("#F1959B","#F07470","#DC1C13")))
 
 ```
+
+Data Table
+=====================================
+  
+  
+```{r}
+
+all_ctry <- new_data_country %>% select(c(1,2,4,3)) %>% rename(Confirmed = confirmed, Recovered = recovered, Death = death)
+
+datatable(all_ctry, 
+          caption = "Latest data by country",
+          class = 'cell-border stripe',
+          rownames = T,
+          options = list (pageLength = 25))
+```
+
