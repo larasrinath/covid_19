@@ -129,7 +129,7 @@ Timeline <- ggplot(Timelinechart, aes(x=Date, y=Affected)) +
   xlab("Timeline")
 
 
-p <- ggplotly(Timeline) %>% layout(legend = list(orientation = 'h'))
+p <- ggplotly(Timeline) %>% layout(legend = list(orientation = 'h')) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
 
 ########## Latest Data ############
 latest_data<- Timelinechart %>% spread(Status,Affected) %>% arrange(desc(Date)) %>% head(1)
