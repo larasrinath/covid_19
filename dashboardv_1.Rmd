@@ -124,14 +124,12 @@ options(scipen = 999)
 #  geom_point(aes(color = Status),na.rm = T) +
 #  scale_color_manual(values=c("#F4D03F", "#EC7063", "#58D68D"))+
 #  xlab("Timeline")
+#p <- ggplotly(Timeline) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
+
   
-p <- hchart(Timelinechart, "line", hcaes(x = Date, y = Affected, group = Status)) %>% hc_title(text = "Coronavirus Outbreak Timeline",
+p <- hchart(Timelinechart, "line", hcaes(x = Date, y = Affected, group = Status)) %>% hc_title(text = "Timeline",
            margin = 20, align = "center",
            style = list( useHTML = TRUE))
-
-#Timeline %>% hc_add_theme(hc_theme_smpl())
-
-#p <- ggplotly(Timeline) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
 
 p <- p %>% hc_add_theme(hc_theme_smpl())
 
@@ -151,6 +149,37 @@ affected_countries <- full_table %>%
   mutate(n = 1) %>%
   ungroup() %>%
   summarise(total = sum(n))
+
+
+daily_change <- Timelinechart %>%
+  ungroup() %>%
+  filter(Status =="confirmed") %>% 
+  arrange(desc(Date)) %>% 
+  head(3) %>%
+  mutate(last_day=lead(Affected),
+         Change = (Affected - last_day)/last_day) %>%
+  select(Change) %>% head(2)
+
+today_change <- daily_change$Change[1]
+yday_change <- daily_change$Change[2]
+dailychange <- sprintf("%.2f %%",100*today_change)
+
+daily_change_full <- Timelinechart %>%
+  ungroup() %>%
+  filter(Status =="confirmed") %>% 
+  arrange(desc(Date)) %>% 
+  mutate(last_day=lead(Affected),
+         Change = (Affected - last_day)/last_day) %>%
+  select(Date,Change) %>% mutate(Change = replace_na(Change,0) ,
+                                 Change = as.numeric(sprintf("%.2f ",100*(Change))))
+
+
+  
+p2 <- hchart(daily_change_full, "line", hcaes(x = Date, y = Change)) %>% hc_title(text = "Daily Change %",
+           margin = 20, align = "center",
+           style = list( useHTML = TRUE))
+
+p2 <- p2 %>% hc_add_theme(hc_theme_smpl())
 
 ```
 
@@ -193,14 +222,15 @@ valueBox(latest_Death,
 ```{r}
 valueBox(affected_countries,
          color ="#AEB6BF",
-         icon = "globe-outline")
+         icon = "fas fa-globe")
 ```
 
 ### Daily Change
 
 ```{r}
-valueBox(value = 1,
-         icon = "fa-percent")
+valueBox(value = dailychange,
+         color = ifelse(today_change > yday_change, "red","green"),
+         icon = ifelse(today_change > yday_change, "fas fa-arrow-up","fas fa-arrow-down"))
 ```
 
 ### Fatality Rate
@@ -218,6 +248,8 @@ Row
 ```{r, fig.width=13, fig.height=5}
 
 p
+
+p2
 ```
 
 Map
