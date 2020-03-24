@@ -300,6 +300,7 @@ datatable(all_ctry,
           caption = "Latest data by country",
           class = 'cell-border stripe',
           rownames = T,
-          options = list (pageLength = 25))
+          options = list (pageLength = 25,dom = 't'))
+
 ```
 
