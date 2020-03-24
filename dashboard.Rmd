@@ -7,7 +7,7 @@ output:
     social: [ "twitter", "facebook", "menu"]
 ---
 
-```{r setup, include=FALSE}
+```{r}
 library(flexdashboard)
 library(knitr)
 library(DT)
@@ -103,12 +103,15 @@ full_table <- confirmed_recovered %>%
   full_join(death_data,by = c("Country" = "Country","Date" = "Date", "State" = "State","Latitude"= "Latitude", "Longitude"="Longitude")) %>%
   rename(recovered = Count_recovered,
          confirmed = Count_confirmed,
-         death = Count)
+         death = Count) %>% 
+  mutate(confirmed = replace_na(confirmed,0),
+         recovered =replace_na(recovered,0),
+         death = replace_na(death,0))
 
 ####################### data manipulation ###############
-gather_table <- full_table %>% gather(key= "Status", value = "Count", - c(Country,State, Latitude, Longitude,Date))
+gather_table <- full_table %>% gather(key= "Status", value = "Count", - c(Country,State, Latitude, Longitude,Date)) %>% mutate(Count = replace_na(Count,0) )
 
-Timelinechart <- gather_table %>%group_by(Date,Status) %>% summarise(Affected = sum(Count))
+Timelinechart <- gather_table %>% group_by(Date,Status) %>% summarise(Affected = sum(Count))
 
 ############### chart #############
 options(scipen = 999)
@@ -133,7 +136,7 @@ latest_date <- latest_data$Date
 latest_Confirmed <- latest_data$confirmed
 latest_Death <- latest_data$death
 latest_Recovered <- latest_data$recovered
-fatality <- sprintf("%.2f",100*(latest_Death/latest_Confirmed))
+fatality <- sprintf("%.2f %%",100*(latest_Death/latest_Confirmed))
 
 affected_countries <- full_table %>%
   group_by(Country) %>% count(Country) %>% 

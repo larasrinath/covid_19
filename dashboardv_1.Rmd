@@ -1,0 +1,246 @@
+---
+title: "CoVID-19"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    social: [ "twitter", "facebook", "menu"]
+---
+
+```{r}
+library(flexdashboard)
+library(knitr)
+library(DT)
+library(rpivotTable)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(openintro)
+library(highcharter)
+library(ggvis)
+library(RCurl)
+library(tidyverse)
+library(rvest)
+library(lubridate)
+library(gridExtra)
+library(ggthemes)
+library(scales)
+library(hrbrthemes)
+library(gganimate)
+library(treemap)
+library(crosstalk)
+library(countrycode)
+
+```
+
+
+```{r}
+
+####### data scraping ##############
+recovered_url<- getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv")
+recovered <- read.csv(text = recovered_url)
+
+confirmed_url <- getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+confirmed<- read.csv(text = confirmed_url)
+
+
+death_url <- getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
+death<- read.csv(text = death_url)
+maps_url <- getURL("https://raw.githubusercontent.com/albertyw/avenews/master/old/data/average-latitude-longitude-countries.csv")
+maps<- read.csv(text = maps_url)
+
+pop_url <- "https://www.worldometers.info/world-population/population-by-country/"
+
+pop <- pop_url %>%
+  html() %>%
+  html_nodes(xpath ='//*[@id="example2"]' ) %>%
+  html_table()
+
+population <- pop[[1]]
+
+################# data cleansing ##############
+maps <- maps %>% rename(Code = ISO.3166.Country.Code)
+
+confirmed_data <- confirmed %>% 
+  gather(key= "Date", value = "Count", - c(Province.State,Country.Region,Lat,Long)) %>%
+  mutate(Date = gsub("X","",Date),
+         Date = gsub("\\.","-",Date),
+         Date = mdy(Date)) %>%
+  rename(State = Province.State, Country = Country.Region, Latitude = Lat, Longitude = Long) %>%
+  mutate(Country = str_replace_all(Country, "\\*", ""),
+         Country = factor(Country)) 
+
+confirmed_data <- confirmed_data[,c(2,1,3,4,5,6)]
+
+
+recovered_data <- recovered %>% 
+  gather(key= "Date", value = "Count", - c(Province.State,Country.Region,Lat,Long)) %>%
+  mutate(Date = gsub("X","",Date),
+         Date = gsub("\\.","-",Date),
+         Date = mdy(Date)) %>%
+  rename(State = Province.State, Country = Country.Region, Latitude = Lat, Longitude = Long)%>%
+  mutate(Country = str_replace_all(Country, "\\*", ""),
+         Country = factor(Country)) 
+
+recovered_data <- recovered_data[,c(2,1,3,4,5,6)]
+
+death_data <- death %>% 
+  gather(key= "Date", value = "Count", - c(Province.State,Country.Region,Lat,Long)) %>%
+  mutate(Date = gsub("X","",Date),
+         Date = gsub("\\.","-",Date),
+         Date = mdy(Date)) %>%
+  rename(State = Province.State, Country = Country.Region, Latitude = Lat, Longitude = Long) %>%
+  mutate(Country = str_replace_all(Country, "\\*", ""),
+         Country = factor(Country)) 
+
+death_data <- death_data[,c(2,1,3,4,5,6)]
+
+
+confirmed_recovered<- confirmed_data %>% 
+  full_join(recovered_data,by = c("Country" = "Country","Date" = "Date", "State" = "State","Latitude"= "Latitude", "Longitude"="Longitude"), suffix=c("_confirmed","_recovered"))
+
+full_table <- confirmed_recovered %>% 
+  full_join(death_data,by = c("Country" = "Country","Date" = "Date", "State" = "State","Latitude"= "Latitude", "Longitude"="Longitude")) %>%
+  rename(recovered = Count_recovered,
+         confirmed = Count_confirmed,
+         death = Count) %>% 
+  mutate(confirmed = replace_na(confirmed,0),
+         recovered =replace_na(recovered,0),
+         death = replace_na(death,0))
+
+####################### data manipulation ###############
+gather_table <- full_table %>% gather(key= "Status", value = "Count", - c(Country,State, Latitude, Longitude,Date)) %>% mutate(Count = replace_na(Count,0) )
+
+Timelinechart <- gather_table %>% group_by(Date,Status) %>% summarise(Affected = sum(Count))
+
+############### chart #############
+options(scipen = 999)
+
+Timeline <- ggplot(Timelinechart, aes(x=Date, y=Affected)) +
+  geom_line(aes(color = Status),na.rm = T) + 
+  (scale_x_date(breaks=date_breaks("14 days"),
+                labels=date_format("%b %d")))+
+  geom_point(aes(color = Status),na.rm = T) +
+  theme_gray()+
+  scale_color_manual(values=c("#F4D03F", "#EC7063", "#58D68D"))+
+  xlab("Timeline")
+
+
+
+p <- ggplotly(Timeline) %>% layout(legend = list(orientation = 'h')) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
+
+########## Latest Data ############
+latest_data<- Timelinechart %>% spread(Status,Affected) %>% arrange(desc(Date)) %>% head(1)
+
+latest_date <- latest_data$Date
+latest_Confirmed <- latest_data$confirmed
+latest_Death <- latest_data$death
+latest_Recovered <- latest_data$recovered
+fatality <- sprintf("%.2f %%",100*(latest_Death/latest_Confirmed))
+
+affected_countries <- full_table %>%
+  group_by(Country) %>% count(Country) %>% 
+  mutate(n = 1) %>%
+  ungroup() %>%
+  summarise(total = sum(n))
+
+```
+
+```{r}
+mycolors <- c("blue", "#FFC125", "darkgreen", "darkorange")
+```
+
+CoVID-19
+=====================================
+
+Row
+-------------------------------------
+
+### Confirmed Cases
+
+```{r}
+valueBox(latest_Confirmed,
+         icon = "fas fa-hospital",
+         color = "#F4D03F")
+```
+
+### Recovered
+
+```{r}
+valueBox(latest_Recovered,
+         icon = "fas fa-users",
+         color = "#58D68D")
+```
+
+### Death
+
+```{r}
+valueBox(latest_Death,
+         color = "#EC7063")
+```
+
+### Affected Countries
+
+```{r}
+valueBox(affected_countries,
+         color ="#AEB6BF",
+         icon = "fas fa-globe")
+```
+
+### Fatality Rate
+
+```{r}
+valueBox(fatality,
+         icon = "fa-percent")
+```
+
+
+
+
+
+
+Row  {data-width=2000}
+-------------------------------------
+
+```{r}
+
+p
+```
+
+Map
+=====================================
+
+### MAPS
+
+```{r}
+
+new_data_country <- full_table %>% filter(Date == latest_date)%>% group_by(Country) %>%
+  summarise(confirmed = sum(confirmed),
+            death = sum(death),
+            recovered = sum(recovered)) %>% mutate(iso3 = countrycode(Country, origin = 'country.name', destination = 'iso3c'))
+
+highchart() %>%
+  hc_add_series_map(worldgeojson,new_data_country,
+                    name = "Country",
+                    value = "confirmed",
+                    joinBy = "iso3") %>%
+  hc_mapNavigation(enabled = T) %>%
+   hc_colorAxis(stops = color_stops(n=5,colors = c("#F1959B","#F07470","#DC1C13")))
+
+```
+
+Data Table
+=====================================
+  
+  
+```{r}
+
+all_ctry <- new_data_country %>% select(c(1,2,4,3)) %>% rename(Confirmed = confirmed, Recovered = recovered, Death = death)
+
+datatable(all_ctry, 
+          caption = "Latest data by country",
+          class = 'cell-border stripe',
+          rownames = T,
+          options = list (pageLength = 25))
+```
+
