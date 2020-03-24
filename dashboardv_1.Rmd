@@ -1,8 +1,8 @@
 ---
-title: "CoVID-19"
+title: "Coronavirus Outbreak"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: rows
+    orientation: row
     vertical_layout: fill
     social: [ "twitter", "facebook", "menu"]
     source : embed
@@ -117,18 +117,23 @@ Timelinechart <- gather_table %>% group_by(Date,Status) %>% summarise(Affected =
 ############### chart #############
 options(scipen = 999)
 
-Timeline <- ggplot(Timelinechart, aes(x=Date, y=Affected)) +
-  geom_line(aes(color = Status),na.rm = T) + 
-  (scale_x_date(breaks=date_breaks("14 days"),
-                labels=date_format("%b %d")))+
-  geom_point(aes(color = Status),na.rm = T) +
-  theme_gray()+
-  scale_color_manual(values=c("#F4D03F", "#EC7063", "#58D68D"))+
-  xlab("Timeline")
+#Timeline <- ggplot(Timelinechart, aes(x=Date, y=Affected)) +
+#  geom_line(aes(color = Status),na.rm = T) + 
+#  (scale_x_date(breaks=date_breaks("14 days"),
+#                labels=date_format("%b %d")))+
+#  geom_point(aes(color = Status),na.rm = T) +
+#  scale_color_manual(values=c("#F4D03F", "#EC7063", "#58D68D"))+
+#  xlab("Timeline")
+  
+p <- hchart(Timelinechart, "line", hcaes(x = Date, y = Affected, group = Status)) %>% hc_title(text = "Coronavirus Outbreak Timeline",
+           margin = 20, align = "center",
+           style = list( useHTML = TRUE))
 
+#Timeline %>% hc_add_theme(hc_theme_smpl())
 
+#p <- ggplotly(Timeline) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
 
-p <- ggplotly(Timeline) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
+p <- p %>% hc_add_theme(hc_theme_smpl())
 
 ########## Latest Data ############
 latest_data<- Timelinechart %>% spread(Status,Affected) %>% arrange(desc(Date)) %>% head(1)
@@ -139,7 +144,9 @@ latest_Death <- latest_data$death
 latest_Recovered <- latest_data$recovered
 fatality <- sprintf("%.2f %%",100*(latest_Death/latest_Confirmed))
 
-affected_countries <- full_table %>%
+affected_countries <- full_table %>% 
+  mutate(total=confirmed+recovered+death) %>% 
+  filter(total >0) %>%
   group_by(Country) %>% count(Country) %>% 
   mutate(n = 1) %>%
   ungroup() %>%
@@ -181,15 +188,12 @@ valueBox(latest_Death,
 ```
 
 
-Row
--------------------------------------
-
 ### Affected Countries
 
 ```{r}
 valueBox(affected_countries,
          color ="#AEB6BF",
-         icon = "fas fa-globe")
+         icon = "globe-outline")
 ```
 
 ### Daily Change
@@ -205,9 +209,6 @@ valueBox(value = 1,
 valueBox(fatality,
          icon = "fa-percent")
 ```
-
-
-
 
 
 
@@ -231,16 +232,29 @@ new_data_country <- full_table %>% filter(Date == latest_date)%>% group_by(Count
             death = sum(death),
             recovered = sum(recovered)) %>% mutate(iso3 = countrycode(Country, origin = 'country.name', destination = 'iso3c'))
 
-highchart() %>%
+highchart() %>% 
   hc_add_series_map(worldgeojson,new_data_country,
                     name = "Country",
                     value = "confirmed",
                     joinBy = "iso3") %>%
   hc_mapNavigation(enabled = T) %>%
-   hc_colorAxis(stops = color_stops(n=5,colors = c("#F1959B","#F07470","#DC1C13")), type = "logarthmic")
+   hc_colorAxis(dataClasses = color_classes(c(seq(1000, 10000, by = 2000), 100000)))
 
 
 ```
+
+By Country
+========================================
+``` {r}
+
+
+```
+
+
+
+
+
+
 
 Data Table
 =====================================
