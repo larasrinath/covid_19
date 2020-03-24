@@ -25,5 +25,9 @@ highchart() %>%
 w <-worldgeojson
 
 
+tests <- full_table %>% filter(Date == latest_date)%>% group_by(Country) %>%
+  summarise(confirmed = sum(confirmed),
+            death = sum(death),
+            recovered = sum(recovered))
 
 

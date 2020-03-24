@@ -5,6 +5,7 @@ output:
     orientation: rows
     vertical_layout: fill
     social: [ "twitter", "facebook", "menu"]
+    source : embed
 ---
 
 ```{r}
@@ -127,7 +128,7 @@ Timeline <- ggplot(Timelinechart, aes(x=Date, y=Affected)) +
 
 
 
-p <- ggplotly(Timeline) %>% layout(legend = list(orientation = 'h')) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
+p <- ggplotly(Timeline) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
 
 ########## Latest Data ############
 latest_data<- Timelinechart %>% spread(Status,Affected) %>% arrange(desc(Date)) %>% head(1)
@@ -168,7 +169,7 @@ valueBox(latest_Confirmed,
 
 ```{r}
 valueBox(latest_Recovered,
-         icon = "fas fa-users",
+         icon = "fas fa-users fa-sm",
          color = "#58D68D")
 ```
 
@@ -179,12 +180,23 @@ valueBox(latest_Death,
          color = "#EC7063")
 ```
 
+
+Row
+-------------------------------------
+
 ### Affected Countries
 
 ```{r}
 valueBox(affected_countries,
          color ="#AEB6BF",
          icon = "fas fa-globe")
+```
+
+### Daily Change
+
+```{r}
+valueBox(value = 1,
+         icon = "fa-percent")
 ```
 
 ### Fatality Rate
@@ -199,10 +211,10 @@ valueBox(fatality,
 
 
 
-Row  {data-width=2000}
+Row
 -------------------------------------
 
-```{r}
+```{r, fig.width=13, fig.height=5}
 
 p
 ```
@@ -225,7 +237,8 @@ highchart() %>%
                     value = "confirmed",
                     joinBy = "iso3") %>%
   hc_mapNavigation(enabled = T) %>%
-   hc_colorAxis(stops = color_stops(n=5,colors = c("#F1959B","#F07470","#DC1C13")))
+   hc_colorAxis(stops = color_stops(n=5,colors = c("#F1959B","#F07470","#DC1C13")), type = "logarthmic")
+
 
 ```
 
