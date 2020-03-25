@@ -31,6 +31,7 @@ library(gganimate)
 library(treemap)
 library(crosstalk)
 library(countrycode)
+library(viridis)
 
 ```
 
@@ -270,7 +271,10 @@ highchart() %>%
                     value = "confirmed",
                     joinBy = "iso3") %>%
   hc_mapNavigation(enabled = T) %>%
-   hc_colorAxis(dataClasses = color_classes(c(seq(1000, 10000, by = 2000), 100000)))
+    hc_colorAxis(stops = color_stops(10, rev(inferno(n=10,begin =0.1))))
+
+  #hc_colorAxis(stops = color_stops(10, rev(inferno(n=10,direction = -1,alpha = 1,begin =0.2))))
+   #hc_colorAxis(stops = color_stops(10, rev(inferno(10))))
 
 
 ```
