@@ -191,7 +191,7 @@ p2 <- p2 %>% hc_add_theme(hc_theme_smpl())
 mycolors <- c("blue", "#FFC125", "darkgreen", "darkorange")
 ```
 
-CoVID-19
+World
 =====================================
 
 Row
@@ -298,20 +298,11 @@ highchart() %>%
 
 ```
 
-By Country
-========================================
-``` {r}
-
-
-```
 
 
 
 
-
-
-
-Data Table
+Table
 =====================================
   
   
