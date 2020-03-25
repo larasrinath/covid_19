@@ -136,11 +136,14 @@ p <- p %>% hc_add_theme(hc_theme_smpl())
 
 ########## Latest Data ############
 latest_data<- Timelinechart %>% spread(Status,Affected) %>% arrange(desc(Date)) %>% head(1)
+latest_recdata<- Timelinechart %>% spread(Status,Affected) %>% arrange(desc(recovered)) %>% head(1)
+latest_recdate <- latest_data$Date
+
 
 latest_date <- latest_data$Date
 latest_Confirmed <- latest_data$confirmed
 latest_Death <- latest_data$death
-latest_Recovered <- latest_data$recovered
+latest_Recovered <- latest_recdata$recovered
 fatality <- sprintf("%.2f %%",100*(latest_Death/latest_Confirmed))
 
 affected_countries <- full_table %>% 
@@ -206,9 +209,11 @@ valueBox(latest_Confirmed,
 
 ```{r}
 valueBox(latest_Recovered,
+         caption = "Recovered *",
          icon = "fas fa-users fa-sm",
          color = "#58D68D")
 ```
+
 
 ### Death
 
@@ -246,12 +251,26 @@ valueBox(fatality,
 Row
 -------------------------------------
 
-```{r, fig.width=13, fig.height=5}
+```{r}
 
 p
 
 p2
 ```
+
+
+
+
+Row
+-------------------------------------
+
+### Notes
+
+Recovered cases data is obsolete as of March 23, 2020
+
+Data Sources: [Github Data Source](https://github.com/CSSEGISandData/COVID-19)
+
+
 
 Map
 =====================================
