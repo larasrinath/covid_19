@@ -311,20 +311,7 @@ Country
 
 ctry_spread <- gather_table %>%
   select(Country, Date, Status, Count)%>% group_by(Country,Date,Status) %>% 
-  summarise(Affected = sum(Count)) %>%
-  spread(key = Status, value = Affected) %>%
-  arrange(desc(Date)) %>% 
-  mutate(fatal = death/confirmed) %>%
-  mutate(fatal = replace_na(fatal,0)) %>%
-  ungroup() %>%
-  group_by(Country) %>%
-  arrange(desc(Date)) %>% 
-  mutate(last_day=lead(confirmed),
-         last_day = replace_na(last_day,0)) %>%
-  mutate(Change = (confirmed - last_day)/last_day)%>% 
-  mutate(Change = replace_na(Change,0),
-         Change = ifelse(Change == Inf, 0, Change),
-         Change = as.numeric(sprintf("%.2f ",100*(Change))))
+  summarise(Affected = sum(Count)) 
 
 selectInput('ctryInput', 'Country', choices = ctry_spread$Country, selected = as.factor("US"))
 
@@ -340,6 +327,7 @@ Row
 
 latest_ctryConfirmed <- reactive({
   ctry_spread %>%
+  spread(key = Status, value = Affected) %>%
   filter(Country == input$ctryInput) %>% 
   arrange(desc(Date)) %>% 
   head(1) %>% ungroup()
@@ -349,27 +337,54 @@ latest_ctryConfirmed <- reactive({
 
 latest_ctryrecovered <- reactive({
   ctry_spread %>%
+  spread(key = Status, value = Affected) %>%
   filter(Country == input$ctryInput) %>% 
   arrange(desc(recovered)) %>% 
   head(1) %>% ungroup() %>%
   select(recovered) %>% pull()
 })
 
-
+latest_ctryfatal <- reactive({
+  ctry_spread %>%
+  spread(key = Status, value = Affected) %>%
+  filter(Country == input$ctryInput) %>% 
+  arrange(desc(Date)) %>% 
+  mutate(fatal = death/confirmed) %>%
+  head(1) %>% ungroup() %>%
+  select(fatal) %>% pull()
+})
 
 dataset <- reactive({
-   ctry_spread %>% gather(key = Status  , value = Affected, confirmed:recovered ) %>% filter(Country == input$ctryInput)
+   ctry_spread %>% filter(Country == input$ctryInput)
 })
 
 daily_change_ctry <- reactive({
   ctry_spread %>%
-  filter(Country == input$ctryInput)
-   
+  ungroup() %>%
+  filter(Status =="confirmed", Country == input$ctryInput) %>% 
+  group_by(Country) %>%
+  arrange(desc(Date)) %>% 
+  mutate(last_day=lead(Affected),
+         last_day = replace_na(last_day,0)) %>%
+  mutate(Change = (Affected - last_day)/last_day)%>% 
+  mutate(Change = replace_na(Change,0),
+         Change = ifelse(Change == Inf, 0, Change),
+         Change = as.numeric(sprintf("%.2f ",100*(Change))))
 })
 
 today_change_ctry <- reactive({
   ctry_spread %>%
-  filter(Country == input$ctryInput) %>% 
+  ungroup() %>%
+  filter(Status =="confirmed", Country == input$ctryInput) %>% 
+  group_by(Country) %>%
+  arrange(desc(Date)) %>% 
+  mutate(last_day=lead(Affected),
+         last_day = replace_na(last_day,0)) %>%
+  mutate(Change = (Affected - last_day)/last_day)%>% 
+  mutate(Change = replace_na(Change,0),
+         Change = ifelse(Change == Inf, 0, Change),
+         Change = as.numeric(sprintf("%.2f ",100*(Change)))) %>%
+    ungroup() %>%
     select(Change) %>%
     head(1) %>% 
     pull()
@@ -377,7 +392,17 @@ today_change_ctry <- reactive({
 
 yday_change_ctry <- reactive({
   ctry_spread %>%
-  filter(Country == input$ctryInput) %>% 
+  ungroup() %>%
+  filter(Status =="confirmed", Country == input$ctryInput) %>% 
+  group_by(Country) %>%
+  arrange(desc(Date)) %>% 
+  mutate(last_day=lead(Affected),
+         last_day = replace_na(last_day,0)) %>%
+  mutate(Change = (Affected - last_day)/last_day)%>% 
+  mutate(Change = replace_na(Change,0),
+         Change = ifelse(Change == Inf, 0, Change),
+         Change = as.numeric(sprintf("%.2f ",100*(Change)))) %>%
+    ungroup() %>%
     head(2) %>%
     arrange(Date) %>% 
     select(Change) %>%
@@ -453,8 +478,8 @@ valueBox(value = sprintf("%.2f %%",today_change_ctry),
 ```{r}
 renderValueBox({
   
-  pick <- latest_ctryConfirmed()
-  ctryfatal <- sprintf("%.2f %%",100*pick[6])
+  pick <- latest_ctryfatal()
+  ctryfatal <- sprintf("%.2f %%",100*pick)
   
 valueBox(value = ctryfatal,
          color = "warning",
