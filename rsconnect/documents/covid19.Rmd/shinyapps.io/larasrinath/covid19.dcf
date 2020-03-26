@@ -1,0 +1,12 @@
+name: covid19
+title: covid19
+username:
+account: larasrinath
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1998353
+bundleId: 2927205
+url: https://larasrinath.shinyapps.io/covid19/
+when: 1585226587.23214
+asMultiple: FALSE
+asStatic: FALSE

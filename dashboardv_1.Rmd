@@ -5,7 +5,6 @@ output:
     orientation: row
     vertical_layout: fill
     social: [ "twitter", "facebook", "menu"]
-runtime: shiny
 ---
 
 ```{r}
@@ -319,37 +318,4 @@ datatable(all_ctry,
 
 ```
 
-TEST
-==================================
-
-Inputs {.sidebar}
------------------------------------------------------------------------
-
-```{r}
-
-
-selectInput('ctryInput', 'Country', choices = gather_table$Country, selected = "US")
-
-```
-
-Outputs
------------------------------------------------------------------------
-
-```{r}
-dataset <- reactive({
-   gather_table %>% filter(Country == input$ctryInput) %>%group_by(Date,Status) %>% summarise(Affected = sum(Count))
-})
-
-
-
-  renderHighchart({
-    h1<- hchart(dataset(), "line", hcaes(x = Date, y = Affected, group = Status)) %>% hc_title(text = "Timeline",
-           margin = 20, align = "center",
-           style = list( useHTML = TRUE))
-    
-    h1 <-h1 %>% hc_add_theme(hc_theme_smpl())
-
-  
-  print(h1)
-})
-```
+T

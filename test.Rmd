@@ -1,0 +1,50 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: row
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(icon)
+
+```
+
+Row
+------------------------------------
+### test1
+```{r}
+valueBox(value = 11,
+         color ="#AEB6BF",
+         icon = "fas fa-globe")
+```
+
+
+### test 2
+
+```{r}
+valueBox(value = 12,
+         color = "red",
+         icon = "fas fa-heartbeat")
+
+```
+
+### test 3
+
+
+```{r}
+valueBox(value =  10,
+         icon= "fas fa-exclamation-triangle",
+         color = "#EC7063")
+```
+
+### test 4
+
+
+```{r}
+valueBox(value =  10,
+         icon = "fas fa-heart-broken",
+         color = "#EC7063")
+```
