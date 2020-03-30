@@ -245,6 +245,16 @@ gg2<- ggplot(daily_change_full, aes(x=Date, y=New_case)) +
   
 
 
+  
+p2 <- hchart(daily_change_full, "column", hcaes(x = Date, y = New_case)) %>% 
+  hc_title(text = "New Cases per Day",
+           margin = 20, align = "center",
+           style = list( useHTML = TRUE))%>%
+  hc_yAxis(title = list(text ="New Cases")) %>%
+  hc_plotOptions(column = list(
+                            pointWidth=8,
+                            dataLabels = list(enabled = F)))
+
 
 p2 <- p2 %>% hc_add_theme(hc_theme_smpl())
 
