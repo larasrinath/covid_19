@@ -30,6 +30,7 @@ library(hrbrthemes)
 library(countrycode)
 library(viridis)
 library(shiny)
+
 ```
 
 
@@ -121,66 +122,27 @@ gather_table <- full_table %>%
   gather(key= "Status", value = "Count", - c(Country,State, Latitude, Longitude,Date)) %>% 
   mutate(Count = replace_na(Count,0))
 
-Timelinechart <- gather_table %>%
-  group_by(Date,Status) %>%
-  summarise(Affected = sum(Count))
-  
-
-t1chart <- Timelinechart %>% spread(key = Status, value = Affected,fill = 0) %>% ungroup()  
+Timelinechart <- gather_table %>% group_by(Date,Status) %>% summarise(Affected = sum(Count)) 
 
 ############### chart #############
 options(scipen = 999)
 
-
-gg1 <- ggplot(Timelinechart, aes(x=Date, y=Affected)) +
-  geom_line(aes(color = Status),na.rm = T, size =0.8) + 
-  (scale_x_date(breaks=date_breaks("14 days"),
-                labels=date_format("%b %d"))) +
-  scale_color_manual(values=c("#F4D03F", "#EC7063", "#58D68D"))+
-  theme_ipsum()+
-  theme(legend.title = element_blank())
-  
-
-
-gg1 <- ggplotly(gg1) %>% 
-  layout(xaxis=list(fixedrange=TRUE)) %>% 
-  layout(yaxis=list(fixedrange=TRUE)) %>% 
-  layout(showlegend=F) %>%
-  config(displayModeBar = F)
-  
+#Timeline <- ggplot(Timelinechart, aes(x=Date, y=Affected)) +
+#  geom_line(aes(color = Status),na.rm = T) + 
+#  (scale_x_date(breaks=date_breaks("14 days"),
+#                labels=date_format("%b %d")))+
+#  geom_point(aes(color = Status),na.rm = T) +
+#  scale_color_manual(values=c("#F4D03F", "#EC7063", "#58D68D"))+
+#  xlab("Timeline")
+#p <- ggplotly(Timeline) %>% layout(xaxis=list(fixedrange=TRUE)) %>% layout(yaxis=list(fixedrange=TRUE))
 
   
 p <- hchart(Timelinechart, "line", hcaes(x = Date, y = Affected, group = Status)) %>% hc_title(text = "Outbreak Timeline",
            margin = 20, align = "center",
            style = list( useHTML = TRUE))
 
-
-p <- highchart() 
-
-
-p <-  hchart(Timelinechart, "line", hcaes(x = Date, y = Affected, group = Status) ) %>%
-                    hc_plotOptions(line = list(
-                    pointWidth=10,
-                    dataLabels = list(enabled = F)
-                    )) %>%
-      hc_title(text = "Outbreak Timeline",align = "center") %>% 
-      hc_xAxis(title = list(text = "Date"))%>%
-      hc_yAxis(title = list(text = "Cases")) %>%
-      hc_legend(enabled = F)
-
-# #%>%
-#     hc_add_series(name="Recovered",data = t1chart$recovered, color = "#58D68D") %>%
-#                     hc_plotOptions(line = list(
-#                     pointWidth=10,
-#                     dataLabels = list(enabled = F)
-#                     )) %>%
-#    hc_add_series(name="Dead",data = t1chart$death, color = "#EC7063 ") %>%
-#                     hc_plotOptions(line = list(
-#                     pointWidth=10,
-#                     dataLabels = list(enabled = F)
-#                     ))
-
 p <- p %>% hc_add_theme(hc_theme_smpl())
+
 
 ########## Latest Data ############
 latest_data<- Timelinechart %>% spread(Status,Affected) %>% arrange(desc(Date)) %>% head(1)
@@ -228,37 +190,23 @@ daily_change_full <- Timelinechart %>%
   filter(Status =="confirmed") %>% 
   arrange(desc(Date)) %>% 
   mutate(last_day=lead(Affected),
-         Change = (Affected - last_day)/last_day,
-         New_case = (Affected - last_day)) %>%
-  mutate(Change = replace_na(Change,0),
-         New_case = replace_na(New_case,0),
-         Change = as.numeric(sprintf("%.2f ",100*(Change))))
-
-gg2<- ggplot(daily_change_full, aes(x=Date, y=New_case)) +
-  geom_col(fill = "#F4D03F",na.rm = T, size =0.8) + 
-  (scale_x_date(breaks=date_breaks("14 days"),
-                labels=date_format("%b %d"))) +
-  ylab("New Cases")+
-  theme_minimal()+
-  theme(legend.title = element_blank())
-  
+         Change = (Affected - last_day)/last_day) %>%
+  select(Date,Change) %>% mutate(Change = replace_na(Change,0) ,
+                                 Change = as.numeric(sprintf("%.2f ",100*(Change))))
 
 
   
-p2 <- hchart(daily_change_full, "column", hcaes(x = Date, y = New_case)) %>% 
-  hc_title(text = "New Cases per Day",
+p2 <- hchart(daily_change_full, "line", hcaes(x = Date, y = Change)) %>% hc_title(text = "Daily Change in Confirmed Cases (%)",
            margin = 20, align = "center",
-           style = list( useHTML = TRUE))%>%
-  hc_yAxis(title = list(text ="New Cases")) %>%
-  hc_plotOptions(column = list(
-                            pointWidth=8,
-                            dataLabels = list(enabled = F)))
-
+           style = list( useHTML = TRUE))
 
 p2 <- p2 %>% hc_add_theme(hc_theme_smpl())
 
 ```
 
+```{r}
+mycolors <- c("blue", "#FFC125", "darkgreen", "darkorange")
+```
 
 World
 =====================================
@@ -320,30 +268,13 @@ valueBox(affected_countries,
 
 
 
-Column
+Row
 -------------------------------------
 
 ```{r}
 
-#gg1
-
-
-#gg2
-
-
 p
 
-p2
-```
-
-
-
-Map
-=====================================
-
-### MAPS
-
-```{r}
 
 
 highchart() %>% 
@@ -359,6 +290,14 @@ highchart() %>%
 
 
 ```
+
+
+
+Map
+=====================================
+
+### MAPS
+
 
 
 
@@ -380,8 +319,7 @@ ctry_spread <- gather_table %>%
   arrange(desc(Date)) %>% 
   mutate(last_day=lead(confirmed),
          last_day = replace_na(last_day,0)) %>%
-  mutate(Change = (confirmed - last_day)/last_day,
-         New_case = confirmed - last_day)%>% 
+  mutate(Change = (confirmed - last_day)/last_day)%>% 
   mutate(Change = replace_na(Change,0),
          Change = ifelse(Change == Inf, 0, Change),
          Change = as.numeric(sprintf("%.2f ",100*(Change))))
@@ -405,10 +343,11 @@ latest_ctryConfirmed <- reactive({
   head(1) %>% ungroup()
 })
 
-
+#%>% gather(key = Status  , value = Affected, confirmed:recovered )
 
 dataset <- reactive({
-   ctry_spread %>% gather(key = Status  , value = Affected, confirmed:recovered ) %>% filter(Country == input$ctryInput)
+  
+   ctry_spread  %>% filter(Country == input$ctryInput)
 })
 
 daily_change_ctry <- reactive({
@@ -517,16 +456,22 @@ Row
 ----------------------------------------------------------
 
 ```{r}
+
+renderHighchart({
+    htest <- hchart(dataset(), "line", hcaes(x = Date, y = confirmed)) %>% 
+      hc_title(text = "Outbreak Timeline",
+           margin = 20, align = "center",
+           style = list( useHTML = TRUE))
+    
+    print(htest)
+  
+  })
+
+
   renderHighchart({
-    h1<- hchart(dataset(), "line", hcaes(x = Date, y = Affected, group = Status))  %>%
-                    hc_plotOptions(line = list(
-                    pointWidth=10,
-                    dataLabels = list(enabled = F)
-                    )) %>%
-      hc_title(text = "Outbreak Timeline", align = "center") %>% 
-      hc_xAxis(title = list(text = "Date"))%>%
-      hc_yAxis(title = list(text = "Cases")) %>%
-      hc_legend(enabled = F)
+    h1<- hchart(dataset(), "line", hcaes(x = Date, y = Affected, group = Status)) %>% hc_title(text = "Outbreak Timeline",
+           margin = 20, align = "center",
+           style = list( useHTML = TRUE))
     
     h1 <-h1 %>% hc_add_theme(hc_theme_smpl())
 
@@ -537,15 +482,9 @@ Row
 
   renderHighchart({
     
-    h2 <- hchart(daily_change_ctry(), "column", hcaes(x = Date, y = New_case)) %>% 
-  hc_title(text = "New Cases per Day",
+    h2 <- hchart(daily_change_ctry(), "line", hcaes(x = Date, y = Change)) %>% hc_title(text = "Daily Change in Confirmed Cases (%)",
            margin = 20, align = "center",
-           style = list( useHTML = TRUE))%>%
-  hc_yAxis(title = list(text ="New Cases")) %>%
-  hc_plotOptions(column = list(
-                            pointWidth=8,
-                            dataLabels = list(enabled = F)))
-
+           style = list( useHTML = TRUE))
 
 h2 <- h2 %>% hc_add_theme(hc_theme_smpl())
 

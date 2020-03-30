@@ -5,8 +5,8 @@ account: larasrinath
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1998353
-bundleId: 2927628
+bundleId: 2939305
 url: https://larasrinath.shinyapps.io/covid19/
-when: 1585233540.70145
+when: 1585485988.05186
 asMultiple: FALSE
 asStatic: FALSE
